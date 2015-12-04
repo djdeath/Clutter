@@ -138,12 +138,7 @@ clutter_canvas_finalize (GObject *gobject)
 {
   ClutterCanvasPrivate *priv = CLUTTER_CANVAS (gobject)->priv;
 
-  if (priv->buffer != NULL)
-    {
-      cogl_object_unref (priv->buffer);
-      priv->buffer = NULL;
-    }
-
+  g_clear_pointer (&priv->buffer, cogl_object_unref);
   g_clear_pointer (&priv->texture, cogl_object_unref);
 
   G_OBJECT_CLASS (clutter_canvas_parent_class)->finalize (gobject);
@@ -389,15 +384,16 @@ clutter_canvas_paint_content (ClutterContent   *content,
 }
 
 static void
-clutter_canvas_emit_draw (ClutterCanvas *self)
+clutter_canvas_emit_draw (ClutterCanvas *self,
+                          int            real_width,
+                          int            real_height,
+                          int            window_scale)
 {
   ClutterCanvasPrivate *priv = self->priv;
-  int real_width, real_height;
   cairo_surface_t *surface;
   gboolean mapped_buffer;
   unsigned char *data;
   CoglBuffer *buffer;
-  int window_scale = 1;
   gboolean res;
   cairo_t *cr;
 
@@ -405,15 +401,6 @@ clutter_canvas_emit_draw (ClutterCanvas *self)
 
   priv->dirty = TRUE;
 
-  if (priv->scale_factor_set)
-    window_scale = priv->scale_factor;
-  else
-    g_object_get (clutter_settings_get_default (),
-                  "window-scaling-factor", &window_scale,
-                  NULL);
-
-  real_width = priv->width * window_scale;
-  real_height = priv->height * window_scale;
 
   CLUTTER_NOTE (MISC, "Creating Cairo surface with size %d x %d (real: %d x %d, scale: %d)",
                 priv->width, priv->height,
@@ -500,8 +487,21 @@ clutter_canvas_invalidate (ClutterContent *content)
 {
   ClutterCanvas *self = CLUTTER_CANVAS (content);
   ClutterCanvasPrivate *priv = self->priv;
+  int real_width, real_height, window_scale;
 
-  if (priv->buffer != NULL)
+  if (priv->scale_factor_set)
+    window_scale = priv->scale_factor;
+  else
+    g_object_get (clutter_settings_get_default (),
+                  "window-scaling-factor", &window_scale,
+                  NULL);
+
+  real_width = priv->width * window_scale;
+  real_height = priv->height * window_scale;
+
+  if (priv->buffer != NULL &&
+      (cogl_bitmap_get_width (priv->buffer) != real_width ||
+       cogl_bitmap_get_height (priv->buffer) != real_height))
     {
       cogl_object_unref (priv->buffer);
       priv->buffer = NULL;
@@ -510,7 +510,7 @@ clutter_canvas_invalidate (ClutterContent *content)
   if (priv->width <= 0 || priv->height <= 0)
     return;
 
-  clutter_canvas_emit_draw (self);
+  clutter_canvas_emit_draw (self, real_width, real_height, window_scale);
 }
 
 static gboolean
