@@ -3291,6 +3291,9 @@ clutter_canvas_new
 clutter_canvas_set_size
 clutter_canvas_set_scale_factor
 clutter_canvas_get_scale_factor
+clutter_canvas_set_tile_size
+clutter_canvas_get_tile_size
+clutter_canvas_invalidate_area
 <SUBSECTION Standard>
 CLUTTER_TYPE_CANVAS
 CLUTTER_CANVAS

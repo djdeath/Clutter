@@ -101,6 +101,22 @@ void                    clutter_canvas_set_scale_factor         (ClutterCanvas *
 CLUTTER_AVAILABLE_IN_1_18
 int                     clutter_canvas_get_scale_factor         (ClutterCanvas *canvas);
 
+
+CLUTTER_AVAILABLE_IN_1_26
+guint                   clutter_canvas_get_tile_size            (ClutterCanvas *canvas);
+
+CLUTTER_AVAILABLE_IN_1_26
+void                    clutter_canvas_set_tile_size            (ClutterCanvas *canvas,
+                                                                 guint          tile_size);
+
+CLUTTER_AVAILABLE_IN_1_26
+void                    clutter_canvas_invalidate_area          (ClutterCanvas *canvas,
+                                                                 gint           x,
+                                                                 gint           y,
+                                                                 gint           width,
+                                                                 gint           height);
+
+
 G_END_DECLS
 
 #endif /* __CLUTTER_CANVAS_H__ */
