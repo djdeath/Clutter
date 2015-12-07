@@ -130,19 +130,25 @@ on_button_press (ClutterActor       *actor,
 }
 
 static gboolean
-draw_bouncer (ClutterCairoTexture *texture,
-              cairo_t             *cr)
+draw_bouncer (ClutterCanvas *canvas,
+              cairo_t       *cr,
+              gint           width,
+              gint           height)
 {
   const ClutterColor *bouncer_color;
   cairo_pattern_t *pattern;
-  guint width, height;
   float radius;
-
-  clutter_cairo_texture_get_surface_size (texture, &width, &height);
 
   radius = MAX (width, height);
 
-  clutter_cairo_texture_clear (texture);
+  /* clear the contents of the canvas, to avoid painting
+   * over the previous frame
+   */
+  cairo_save (cr);
+  cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 0.0);
+  cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
+  cairo_paint (cr);
+  cairo_restore (cr);
 
   cairo_arc (cr, radius / 2, radius / 2, radius / 2, 0.0, 2.0 * G_PI);
 
@@ -175,10 +181,19 @@ static ClutterActor *
 make_bouncer (gfloat width,
               gfloat height)
 {
+  ClutterContent *canvas;
   ClutterActor *retval;
 
-  retval = clutter_cairo_texture_new (width, height);
-  g_signal_connect (retval, "draw", G_CALLBACK (draw_bouncer), NULL);
+  canvas = g_object_new (CLUTTER_TYPE_CANVAS,
+                         "width", (gint) width,
+                         "height", (gint) height,
+                         NULL);
+  g_signal_connect (canvas, "draw", G_CALLBACK (draw_bouncer), NULL);
+  retval = g_object_new (CLUTTER_TYPE_ACTOR,
+                         "width", width,
+                         "height", height,
+                         "content", canvas,
+                         NULL);
 
   clutter_actor_set_name (retval, "bouncer");
   clutter_actor_set_size (retval, width, height);
@@ -186,7 +201,9 @@ make_bouncer (gfloat width,
   clutter_actor_set_reactive (retval, TRUE);
 
   /* make sure we draw the bouncer immediately */
-  clutter_cairo_texture_invalidate (CLUTTER_CAIRO_TEXTURE (retval));
+  clutter_content_invalidate (canvas);
+
+  g_object_unref (canvas);
 
   return retval;
 }
