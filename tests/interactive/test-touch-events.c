@@ -28,8 +28,6 @@
 #define NUM_ACTORS 10
 
 static GQueue events = G_QUEUE_INIT;
-static GQueue all_events = G_QUEUE_INIT;
-static gboolean new_surface = TRUE;
 
 static const ClutterColor const static_colors[] = {
   { 0xff, 0x00, 0x00, 0xff },   /* red */
@@ -44,12 +42,6 @@ static const ClutterColor const static_colors[] = {
   { 0xff, 0xff, 0x00, 0xff },   /* yellow */
 };
 static GHashTable *sequence_to_color = NULL;
-
-static void
-canvas_paint (ClutterCairoTexture *canvas)
-{
-  clutter_cairo_texture_invalidate (canvas);
-}
 
 static void
 draw_touch (ClutterEvent *event,
@@ -77,27 +69,13 @@ static gboolean
 draw_touches (ClutterCairoTexture *canvas,
               cairo_t             *cr)
 {
-  g_queue_foreach (new_surface ? &all_events : &events, (GFunc) draw_touch, cr);
-  g_queue_clear (&events);
-
-  new_surface = FALSE;
+  g_queue_foreach (&events, (GFunc) draw_touch, cr);
 
   return TRUE;
 }
 
-static cairo_surface_t *
-create_surface (ClutterCairoTexture *texture,
-                guint width,
-                guint height,
-                gpointer user_data)
-{
-  new_surface = TRUE;
-
-  return NULL;
-}
-
 static gboolean
-event_cb (ClutterActor *actor, ClutterEvent *event, ClutterActor *canvas)
+event_cb (ClutterActor *actor, ClutterEvent *event, ClutterContent *canvas)
 {
   ClutterEvent *copy;
 
@@ -106,8 +84,7 @@ event_cb (ClutterActor *actor, ClutterEvent *event, ClutterActor *canvas)
 
   copy = clutter_event_copy (event);
   g_queue_push_tail (&events, copy);
-  g_queue_push_tail (&all_events, copy);
-  clutter_actor_queue_redraw (canvas);
+  clutter_content_invalidate (canvas);
 
   return TRUE;
 }
@@ -126,10 +103,23 @@ rect_event_cb (ClutterActor *actor, ClutterEvent *event, gpointer data)
   return TRUE;
 }
 
+static void
+stage_allocation_cb (ClutterActor           *actor,
+                     ClutterActorBox        *box,
+                     ClutterAllocationFlags  flags,
+                     ClutterCanvas          *canvas)
+{
+  clutter_canvas_set_size (canvas,
+                           clutter_actor_box_get_width (box),
+                           clutter_actor_box_get_height (box));
+}
+
+
 G_MODULE_EXPORT int
 test_touch_events_main (int argc, char *argv[])
 {
-  ClutterActor *stage, *canvas;
+  ClutterActor *stage;
+  ClutterContent *canvas;
   int i;
 
   /* initialize Clutter */
@@ -146,16 +136,14 @@ test_touch_events_main (int argc, char *argv[])
   clutter_actor_show (stage);
 
   /* our 2D canvas, courtesy of Cairo */
-  canvas = clutter_cairo_texture_new (1, 1);
-  g_signal_connect (canvas, "paint", G_CALLBACK (canvas_paint), NULL);
+  canvas = g_object_new (CLUTTER_TYPE_CANVAS,
+                         "width", (gint) clutter_actor_get_width (stage),
+                         "height", (gint) clutter_actor_get_height (stage),
+                         NULL);
   g_signal_connect (canvas, "draw", G_CALLBACK (draw_touches), NULL);
-  g_signal_connect (canvas, "create-surface", G_CALLBACK (create_surface), NULL);
-  clutter_cairo_texture_set_auto_resize (CLUTTER_CAIRO_TEXTURE (canvas), TRUE);
-  clutter_actor_add_constraint (canvas,
-                                clutter_bind_constraint_new (stage,
-                                                             CLUTTER_BIND_SIZE,
-                                                             0));
-  clutter_container_add_actor (CLUTTER_CONTAINER (stage), canvas);
+  g_signal_connect (stage, "allocation-changed",
+                    G_CALLBACK (stage_allocation_cb), canvas);
+  clutter_actor_set_content (stage, canvas);
 
   g_signal_connect (stage, "event", G_CALLBACK (event_cb), canvas);
 
@@ -167,7 +155,7 @@ test_touch_events_main (int argc, char *argv[])
 
       /* Test that event delivery to actors work */
       g_signal_connect (rectangle, "event", G_CALLBACK (rect_event_cb), NULL);
-      
+
       clutter_container_add_actor (CLUTTER_CONTAINER (stage), rectangle);
       clutter_actor_set_size (rectangle, size, size);
       clutter_actor_set_position (rectangle, 0, i * size);
@@ -178,9 +166,8 @@ test_touch_events_main (int argc, char *argv[])
 
   clutter_main ();
 
-  g_queue_foreach (&all_events, (GFunc) clutter_event_free, NULL);
+  g_queue_foreach (&events, (GFunc) clutter_event_free, NULL);
   g_queue_clear (&events);
-  g_queue_clear (&all_events);
   g_hash_table_destroy (sequence_to_color);
 
   return EXIT_SUCCESS;
