@@ -180,6 +180,7 @@ clutter_win32_disable_event_retrieval (void)
 
 static CoglRenderer *
 clutter_backend_win32_get_renderer (ClutterBackend  *backend,
+                                    CoglDriver       driver_id,
                                     GError         **error)
 {
   CoglRenderer *renderer;

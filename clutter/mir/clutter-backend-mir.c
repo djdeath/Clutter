@@ -69,6 +69,7 @@ clutter_backend_mir_post_parse (ClutterBackend  *backend,
 
 static CoglRenderer *
 clutter_backend_mir_get_renderer (ClutterBackend  *backend,
+                                  CoglDriver       driver_id,
                                   GError         **error)
 {
   ClutterBackendMir *backend_mir = CLUTTER_BACKEND_MIR (backend);

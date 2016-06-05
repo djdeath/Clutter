@@ -225,6 +225,7 @@ clutter_backend_wayland_post_parse (ClutterBackend  *backend,
 
 static CoglRenderer *
 clutter_backend_wayland_get_renderer (ClutterBackend  *backend,
+                                      CoglDriver       driver_id,
                                       GError         **error)
 {
   ClutterBackendWayland *backend_wayland = CLUTTER_BACKEND_WAYLAND (backend);
@@ -235,7 +236,10 @@ clutter_backend_wayland_get_renderer (ClutterBackend  *backend,
   renderer = cogl_renderer_new ();
 
   cogl_wayland_renderer_set_event_dispatch_enabled (renderer, !_no_event_dispatch);
-  cogl_renderer_set_winsys_id (renderer, COGL_WINSYS_ID_EGL_WAYLAND);
+  if (driver_id == COGL_DRIVER_VULKAN)
+    cogl_renderer_set_winsys_id (renderer, COGL_WINSYS_ID_VULKAN_WAYLAND);
+  else
+    cogl_renderer_set_winsys_id (renderer, COGL_WINSYS_ID_EGL_WAYLAND);
 
   cogl_wayland_renderer_set_foreign_display (renderer,
                                              backend_wayland->wayland_display);

@@ -77,6 +77,7 @@ clutter_backend_egl_native_dispose (GObject *gobject)
 
 static CoglRenderer *
 clutter_backend_egl_native_get_renderer (ClutterBackend  *backend,
+                                         CoglDriver       driver_id,
                                          GError         **error)
 {
   CoglRenderer *renderer;

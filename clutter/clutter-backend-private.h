@@ -81,6 +81,7 @@ struct _ClutterBackendClass
                                                 GOptionGroup    *group);
   ClutterFeatureFlags   (* get_features)       (ClutterBackend  *backend);
   CoglRenderer *        (* get_renderer)       (ClutterBackend  *backend,
+                                                CoglDriver       driver_id,
                                                 GError         **error);
   CoglDisplay *         (* get_display)        (ClutterBackend  *backend,
                                                 CoglRenderer    *renderer,

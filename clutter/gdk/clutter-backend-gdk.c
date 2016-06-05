@@ -253,6 +253,7 @@ clutter_backend_gdk_get_features (ClutterBackend *backend)
 
 static CoglRenderer *
 clutter_backend_gdk_get_renderer (ClutterBackend  *backend,
+                                  CoglDriver       driver_id,
                                   GError         **error)
 {
   ClutterBackendGdk *backend_gdk = CLUTTER_BACKEND_GDK (backend);
@@ -273,7 +274,10 @@ clutter_backend_gdk_get_renderer (ClutterBackend  *backend,
       struct wl_display *display = gdk_wayland_display_get_wl_display (backend_gdk->display);
 
       /* Force a Wayland winsys */
-      cogl_renderer_set_winsys_id (renderer, COGL_WINSYS_ID_EGL_WAYLAND);
+      if (driver_id == COGL_DRIVER_VULKAN)
+        cogl_renderer_set_winsys_id (renderer, COGL_WINSYS_ID_VULKAN_WAYLAND);
+      else
+        cogl_renderer_set_winsys_id (renderer, COGL_WINSYS_ID_EGL_WAYLAND);
       cogl_wayland_renderer_set_foreign_display (renderer, display);
       cogl_wayland_renderer_set_event_dispatch_enabled (renderer, !disable_event_retrieval);
     }

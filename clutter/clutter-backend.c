@@ -262,7 +262,8 @@ clutter_backend_do_real_create_context (ClutterBackend  *backend,
 
   CLUTTER_NOTE (BACKEND, "Creating Cogl renderer");
   if (klass->get_renderer != NULL)
-    backend->cogl_renderer = klass->get_renderer (backend, &internal_error);
+    backend->cogl_renderer = klass->get_renderer (backend, driver_id,
+                                                  &internal_error);
   else
     backend->cogl_renderer = cogl_renderer_new ();
 
@@ -368,6 +369,7 @@ static const struct {
   { "gl3", "OpenGL 3.2 core profile", COGL_DRIVER_GL3 },
   { "gl", "OpenGL legacy profile", COGL_DRIVER_GL },
   { "gles2", "OpenGL ES 2.0", COGL_DRIVER_GLES2 },
+  { "vulkan", "Vulkan", COGL_DRIVER_VULKAN },
   { "any", "Default Cogl driver", COGL_DRIVER_ANY },
 };
 

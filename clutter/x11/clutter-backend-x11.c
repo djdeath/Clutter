@@ -669,6 +669,7 @@ clutter_backend_x11_translate_event (ClutterBackend *backend,
 
 static CoglRenderer *
 clutter_backend_x11_get_renderer (ClutterBackend  *backend,
+                                  CoglDriver       driver_id,
                                   GError         **error)
 {
   ClutterBackendX11 *backend_x11 = CLUTTER_BACKEND_X11 (backend);
